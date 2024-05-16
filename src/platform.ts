@@ -33,47 +33,114 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private accessoryObjects: MultiServiceAccessory[] = [];
   private subscriptionHandler: SubscriptionHandler | undefined = undefined;
 
-  constructor(
-    public readonly log: Logger,
-    public readonly config: PlatformConfig,
-    public readonly api: API,
-  ) {
-    this.log.debug('Finished initializing platform:', this.config.name);
 
-    // When this event is fired it means Homebridge has restored all cached accessories from disk.
-    // Dynamic Platform plugins should only register new accessories after this event was fired,
-    // in order to ensure they weren't added to homebridge already. This event can also be used
-    // to start discovery of new accessories.
+// Exponential Backoff Code from ChatGPT
 
-    this.api.on('didFinishLaunching', async () => {
-      log.debug('Executed didFinishLaunching callback');
-      // run the method to discover / register your devices as accessories
+constructor(
+  public readonly log: Logger,
+  public readonly config: PlatformConfig,
+  public readonly api: API,
+) {
+  this.log.debug('Finished initializing platform:', this.config.name);
 
-      // If locations or rooms to ignore are configured, then
-      // load request those from Smartthings to build the id lists.
+  this.api.on('didFinishLaunching', async () => {
+    this.log.debug('Executed didFinishLaunching callback');
 
-      if (this.config.IgnoreLocations) {
+    if (this.config.IgnoreLocations) {
+      try {
         await this.getLocationsToIgnore();
+      } catch (error) {
+        this.log.error(`Could not load locations to ignore: ${error}. Check your configuration`);
       }
+    }
 
+    const maxRetries = 5;
+    const baseDelay = 1000;
 
-      this.getOnlineDevices().then((devices) => {
+    let devices = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        devices = await this.getOnlineDevices();
+        break;
+      } catch (error) {
+        const delay = baseDelay * Math.pow(2, attempt - 1) * (1 + Math.random());
+        this.log.error(`Attempt ${attempt} - Could not load devices from SmartThings: ${error}. Retrying in ${(delay / 1000).toFixed(2)} seconds... ExpoBO`);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          this.log.error('Max retries reached. Check your configuration and network connectivity. ExpoBO');
+        }
+      }
+    }
+
+    if (devices) {
+      try {
         if (this.config.UnregisterAll) {
           this.unregisterDevices(devices, true);
         }
+
         this.discoverDevices(devices);
         this.unregisterDevices(devices);
-        // Start subscription service if we have a webhook token
-        if (config.WebhookToken && config.WebhookToken !== '') {
+
+        if (this.config.WebhookToken && this.config.WebhookToken !== '') {
           this.subscriptionHandler = new SubscriptionHandler(this, this.accessoryObjects);
           this.subscriptionHandler.startService();
         }
+      } catch (error) {
+        this.log.error(`Error processing devices: ${error}. Continuing without devices. ExpoBO`);
+      }
+    }
+  });
+}
 
-      }).catch(reason => {
-        this.log.error(`Could not load devices from Smartthings: ${reason}.  Check your configuration`);
-      });
-    });
-  }
+
+// End Exponential backoff code from ChatGPT
+
+// Old Code
+
+  // constructor(
+  //   public readonly log: Logger,
+  //   public readonly config: PlatformConfig,
+  //   public readonly api: API,
+  // ) {
+  //   this.log.debug('Finished initializing platform:', this.config.name);
+
+  //   // When this event is fired it means Homebridge has restored all cached accessories from disk.
+  //   // Dynamic Platform plugins should only register new accessories after this event was fired,
+  //   // in order to ensure they weren't added to homebridge already. This event can also be used
+  //   // to start discovery of new accessories.
+
+  //   this.api.on('didFinishLaunching', async () => {
+  //     log.debug('Executed didFinishLaunching callback');
+  //     // run the method to discover / register your devices as accessories
+
+  //     // If locations or rooms to ignore are configured, then
+  //     // load request those from Smartthings to build the id lists.
+
+  //     if (this.config.IgnoreLocations) {
+  //       await this.getLocationsToIgnore();
+  //     }
+
+
+  //     this.getOnlineDevices().then((devices) => {
+  //       if (this.config.UnregisterAll) {
+  //         this.unregisterDevices(devices, true);
+  //       }
+  //       this.discoverDevices(devices);
+  //       this.unregisterDevices(devices);
+  //       // Start subscription service if we have a webhook token
+  //       if (config.WebhookToken && config.WebhookToken !== '') {
+  //         this.subscriptionHandler = new SubscriptionHandler(this, this.accessoryObjects);
+  //         this.subscriptionHandler.startService();
+  //       }
+
+  //     }).catch(reason => {
+  //       this.log.error(`Could not load devices from Smartthings: ${reason}.  Check your configuration`);
+  //     });
+  //   });
+  // }
+
+  // End Old Code
 
   /**
    * This function is invoked when homebridge restores cached accessories from disk at startup.
