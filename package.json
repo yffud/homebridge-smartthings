@@ -10,7 +10,7 @@
     "url": "https://github.com/yffud/homebridge-smartthings"
   },
   "bugs": {
-    "url": "https://github.com/iklein99/homebridge-smartthings/issues"
+    "url": "https://github.com/yffud/homebridge-smartthings/issues"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -44,11 +44,11 @@
   "funding": [
     {
       "type": "paypal",
-      "url": "https://www.paypal.com/paypalme/iklein99"
+      "url": ""
     },
     {
       "type": "venmo",
-      "url": "https://venmo.com/?txn=pay&audience=public&recipients=ira-klein-3"
+      "url": ""
     }
   ]
 }
