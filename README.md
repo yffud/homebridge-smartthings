@@ -1,3 +1,9 @@
+Clone into /var/lib/homebridge/node_modules on HomeBridge Terminal
+run the following commands to install and build from typeScript to JS. 
+npm install axios (missing from package.json)
+npm install
+npm run build
+
 
 <p align="center">
 
