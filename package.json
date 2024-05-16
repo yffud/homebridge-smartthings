@@ -2,7 +2,11 @@
   "private": false,
   "displayName": "SmartThings Plugin",
   "name": "homebridge-smartthings-SD",
+<<<<<<< HEAD
   "version": "1.5.22",
+=======
+  "version": "1.5.23",
+>>>>>>> 07609af (Implement exponential backoff for device loading)
   "description": "Connects SmartThings devices to Homebridge.  Automatically discovers devices.",
   "license": "Apache-2.0",
   "repository": {
