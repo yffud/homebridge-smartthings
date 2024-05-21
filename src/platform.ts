@@ -54,8 +54,8 @@ constructor(
       }
     }
 
-    const maxRetries = 10;
-    const baseDelay = 5000;
+    const maxRetries = 20;
+    const baseDelay = 10000;
 
     let devices = null;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
